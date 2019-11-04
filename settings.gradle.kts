@@ -1,2 +1,3 @@
 rootProject.name = "tg-remote-client"
-include("api")
+include("api", "blob-storage")
+include("postrges-db")
