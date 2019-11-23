@@ -4,8 +4,12 @@ import org.drinkless.tdlib.Client;
 
 public class TdLib {
     static {
-        System.setProperty("java.library.path", "tdlib/libs");
-        System.loadLibrary("tdjni");
+        try {
+            System.setProperty("java.library.path", "tdlib/libs");
+            System.loadLibrary("tdjni");
+        } catch (UnsatisfiedLinkError e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {

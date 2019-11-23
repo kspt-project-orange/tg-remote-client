@@ -4,3 +4,6 @@ out
 build
 .gradle
 
+!tdlib/src/*
+!tdlib/libs/*
+!tdlib/build.gradle.kts
