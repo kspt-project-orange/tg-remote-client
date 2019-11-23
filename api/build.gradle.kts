@@ -10,7 +10,12 @@ plugins {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux:2.2.0.RELEASE")
     implementation("org.jetbrains:annotations:17.0.0")
-    implementation("org.projectlombok:lombok:1.18.10")
+    implementation("com.typesafe:config:1.4.0")
+
+    implementation(project(":postrges-db"))
+
+    compileOnly("org.projectlombok:lombok:1.18.10")
+    annotationProcessor("org.projectlombok:lombok:1.18.10")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test:2.2.0.RELEASE") {
         exclude(module = "junit")

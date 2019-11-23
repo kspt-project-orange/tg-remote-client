@@ -1,11 +1,11 @@
-package kspt.orange.tg_remote_client.tdlib;
+package kspt.orange.tg_remote_client.tg_client;
 
 import org.drinkless.tdlib.Client;
 
-public class TdLib {
+public class TgClient {
     static {
         try {
-            System.setProperty("java.library.path", "tdlib/libs");
+            System.setProperty("java.library.path", "tg-client/libs");
             System.loadLibrary("tdjni");
         } catch (UnsatisfiedLinkError e) {
             e.printStackTrace();

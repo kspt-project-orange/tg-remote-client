@@ -3,8 +3,11 @@ package kspt.orange.tg_remote_client.api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import kspt.orange.tg_remote_client.postgres_db.Db;
+import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -13,9 +16,13 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 //TODO
 @SuppressWarnings("unused")
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/auth")
 public final class Auth implements Api {
+    @Autowired
+    private final Db db;
+
     @PostMapping(path = "/requestCode", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
     public Mono<? extends Response> requestCode(@RequestBody @NotNull final Mono<RequestCodeRequest> body) {
@@ -61,6 +68,7 @@ public final class Auth implements Api {
         }
     }
 
+    @RequiredArgsConstructor
     private static final class RequestCodeResponse implements Response {
         @NotNull
         @JsonIgnore
@@ -81,11 +89,6 @@ public final class Auth implements Api {
 
         private static RequestCodeResponse ok(@NotNull final String authAttemptToken) {
             return new RequestCodeResponse(STATUS_OK, authAttemptToken);
-        }
-
-        private RequestCodeResponse(@NotNull final String status, @Nullable final String authAttemptToken) {
-            this.status = status;
-            this.authAttemptToken = authAttemptToken;
         }
     }
 

@@ -46,6 +46,9 @@ public final class Db {
         pool.dispose();
     }
 
+    public void f() {
+    }
+
     public static void main(String[] args) {
         final var config = ConfigFactory.load("tg-remote-client.conf");
         final var dbConfig = config.getConfig("tgRemoteClient.db");
