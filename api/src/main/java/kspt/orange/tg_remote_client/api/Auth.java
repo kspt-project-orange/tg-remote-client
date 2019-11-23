@@ -54,6 +54,7 @@ public final class Auth implements Api {
             if (request.isValid()) {
                 return Mono.just(Pass2FaResponse.ok("jhkljh1j4h5jkh1jk24h5kj21h4kj5h12jk4h5klj12hk5j"));
             }
+
             return Mono.just(Pass2FaResponse.ERROR);
         });
     }

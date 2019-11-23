@@ -31,5 +31,5 @@ configure<JavaPluginConvention> {
 val bootJar = tasks.withType<BootJar> {
     archiveBaseName.set("tg-remote-client")
     archiveVersion.set(project.version as String)
-    mainClassName = "kspt.orange.tg_remote_client.api.Api"
+    mainClassName = "kspt.orange.tg_remote_client.api.TgRemoteClientService"
 }
