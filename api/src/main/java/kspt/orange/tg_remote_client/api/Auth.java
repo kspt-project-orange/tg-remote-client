@@ -18,7 +18,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public final class Auth implements Api {
     @PostMapping(path = "/requestCode", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
-    public Mono<Response> requestCode(@RequestBody @NotNull final Mono<RequestCodeRequest> body) {
+    public Mono<? extends Response> requestCode(@RequestBody @NotNull final Mono<RequestCodeRequest> body) {
         return body.flatMap(request -> {
             if (request.isValid()) {
                 return Mono.just(RequestCodeResponse.ok("jklj3kl4hj12l5hlhjh14kj5h21kl3j4l12h351j24h1kl45b1kjh32lk5h12;465l2k53"));
@@ -30,7 +30,7 @@ public final class Auth implements Api {
 
     @PostMapping(path = "/signIn", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
-    public Mono<Response> signIn(@RequestBody @NotNull final Mono<SignInRequest> body) {
+    public Mono<? extends Response> signIn(@RequestBody @NotNull final Mono<SignInRequest> body) {
         return body.flatMap(request -> {
             if (request.isValid()) {
                 return Mono.just(SignInResponse.ok("jkj13k2j4klhjlj1243lj5hkj1h3jkhl;hklj1lk3l51jlk"));
