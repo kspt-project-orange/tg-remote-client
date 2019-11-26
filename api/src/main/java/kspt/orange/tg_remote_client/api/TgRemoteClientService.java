@@ -22,8 +22,7 @@ public class TgRemoteClientService {
 
     @NotNull
     @Bean
-    public Db db() {
-        final var apiConfig = apiConfig();
+    public Db db(@NotNull final Config apiConfig) {
         final var dbConfig = apiConfig.getConfig("tgRemoteClient.db");
 
         return new Db(dbConfig);
