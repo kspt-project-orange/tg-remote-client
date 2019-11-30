@@ -2,7 +2,6 @@ package kspt.orange.tg_remote_client.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import kspt.orange.tg_remote_client.postgres_db.Db;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +21,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/v0/auth")
 public final class Auth implements Api {
     @Autowired
     private final Db db;
@@ -63,40 +62,33 @@ public final class Auth implements Api {
         });
     }
 
+    @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
     private static final class RequestCodeRequest implements Request {
         @Nullable
         private final String phone;
-
-        @JsonCreator
-        RequestCodeRequest(@Nullable @JsonProperty("phone") final String phone) {
-            this.phone = phone;
-        }
     }
 
     @RequiredArgsConstructor
     private static final class RequestCodeResponse implements Response {
         @NotNull
-        @JsonIgnore
-        private final static String STATUS_OK = "OK";
-        @NotNull
-        @JsonIgnore
-        private final static String STATUS_ERROR = "ERROR";
-        @NotNull
-        @JsonIgnore
-        private final static RequestCodeResponse ERROR = new RequestCodeResponse(STATUS_ERROR, null);
+        private final static RequestCodeResponse ERROR = new RequestCodeResponse(Status.ERROR, null);
 
         @NotNull
-        @JsonProperty("status")
-        private final String status;
+        private final Status status;
         @Nullable
-        @JsonProperty("authAttemptToken")
         private final String authAttemptToken;
 
         private static RequestCodeResponse ok(@NotNull final String authAttemptToken) {
-            return new RequestCodeResponse(STATUS_OK, authAttemptToken);
+            return new RequestCodeResponse(Status.OK, authAttemptToken);
+        }
+
+        enum Status {
+            OK,
+            ERROR,
         }
     }
 
+    @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
     private static final class SignInRequest implements Request {
         @Nullable
         private final String authAttemptToken;
@@ -104,39 +96,22 @@ public final class Auth implements Api {
         private final String phone;
         @Nullable
         private final String code;
-
-        @JsonCreator
-        private SignInRequest(@Nullable @JsonProperty("authAttemptToken") final String authAttemptToken,
-                              @Nullable @JsonProperty("phone") final String phone,
-                              @Nullable @JsonProperty("code") final String code) {
-            this.authAttemptToken = authAttemptToken;
-            this.phone = phone;
-            this.code = code;
-        }
     }
 
+    @RequiredArgsConstructor
     private static final class SignInResponse implements Response {
         @NotNull
-        @JsonIgnore
         private static final SignInResponse ERROR_2FA_NEEDED = new SignInResponse(Status.ERROR_2FA_NEEDED, null);
         @NotNull
-        @JsonIgnore
         private static final SignInResponse ERROR = new SignInResponse(Status.ERROR, null);
 
         @NotNull
-        @JsonProperty("status")
-        private final String status;
+        private final Status status;
         @Nullable
-        @JsonProperty("authPermanentToken")
         private final String authPermanentToken;
 
         private static SignInResponse ok(@NotNull final String authPermanentToken) {
             return new SignInResponse(Status.OK, authPermanentToken);
-        }
-
-        private SignInResponse(@NotNull final Status status, @Nullable final String authPermanentToken) {
-            this.status = status.toString();
-            this.authPermanentToken = authPermanentToken;
         }
 
         private enum Status {
@@ -146,39 +121,26 @@ public final class Auth implements Api {
         }
     }
 
+    @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
     private static final class Pass2FaRequest implements Request {
         @Nullable
         private final String authAttemptToken;
         @Nullable
         private final String password;
-
-        @JsonCreator
-        private Pass2FaRequest(@Nullable @JsonProperty("authAttemptToken") final String authAttemptToken,
-                               @Nullable @JsonProperty("password") final String password) {
-            this.authAttemptToken = authAttemptToken;
-            this.password = password;
-        }
     }
 
+    @RequiredArgsConstructor
     private static final class Pass2FaResponse implements Response {
         @NotNull
-        @JsonIgnore
         private static final Pass2FaResponse ERROR = new Pass2FaResponse(Status.ERROR, null);
 
         @NotNull
-        @JsonProperty("status")
-        private final String status;
+        private final Status status;
         @Nullable
-        @JsonProperty("authPermanentToken")
         private final String authPermanentToken;
 
         private static Pass2FaResponse ok(@NotNull final String authPermanentToken) {
             return new Pass2FaResponse(Status.OK, authPermanentToken);
-        }
-
-        private Pass2FaResponse(@NotNull final Status status, @Nullable final String authPermanentToken) {
-            this.status = status.toString();
-            this.authPermanentToken = authPermanentToken;
         }
 
         private enum Status {

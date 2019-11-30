@@ -45,7 +45,7 @@ public final class Db {
                 .maxSize(poolMaxSize)
                 .build();
 
-        this.pool = new ConnectionPool(poolConfiguration);
+        pool = new ConnectionPool(poolConfiguration);
     }
 
     public void close() {

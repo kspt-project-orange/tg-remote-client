@@ -1,10 +1,15 @@
 package kspt.orange.tg_remote_client.api;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.ALWAYS;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 public interface Api {
+    @JsonInclude(ALWAYS)
+    @JsonAutoDetect(fieldVisibility = ANY)
     interface Request {
         default boolean isValid() {
             for (final var field : getClass().getDeclaredFields()) {
@@ -26,5 +31,6 @@ public interface Api {
     }
 
     @JsonInclude(NON_NULL)
-    interface Response{}
+    @JsonAutoDetect(fieldVisibility = ANY)
+    interface Response {}
 }
