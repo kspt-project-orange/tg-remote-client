@@ -12,6 +12,7 @@ dependencies {
     implementation("org.jetbrains:annotations:17.0.0")
     implementation("com.typesafe:config:1.4.0")
 
+    implementation(project(":tg-client"))
     implementation(project(":postrges-db"))
 
     compileOnly("org.projectlombok:lombok:1.18.10")
@@ -31,5 +32,5 @@ configure<JavaPluginConvention> {
 val bootJar = tasks.withType<BootJar> {
     archiveBaseName.set("tg-remote-client")
     archiveVersion.set(project.version as String)
-    mainClassName = "kspt.orange.tg_remote_client.api.TgRemoteClientService"
+    mainClassName = "kspt.orange.tg_remote_client.api.TgRemoteClientApp"
 }

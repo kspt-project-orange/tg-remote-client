@@ -1,9 +1,11 @@
-package kspt.orange.tg_remote_client.api;
+package kspt.orange.tg_remote_client.api.rest;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import kspt.orange.tg_remote_client.api.util.TokenGenerator;
 import kspt.orange.tg_remote_client.postgres_db.Db;
+import kspt.orange.tg_remote_client.tg_client.TgService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,22 +22,41 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 //TODO
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
+@Slf4j
 @RestController
 @RequestMapping("/v0/auth")
 public final class Auth implements Api {
     @Autowired
+    @NotNull
     private final Db db;
+    @Autowired
+    @NotNull
+    private final TgService tg;
+    @Autowired
+    @NotNull
+    private final TokenGenerator tokenGenerator;
 
     @PostMapping(path = "/requestCode", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
     public Mono<? extends Response> requestCode(@RequestBody @NotNull final Mono<RequestCodeRequest> body) {
-        return body.flatMap(request -> {
-            if (request.isValid()) {
-                return Mono.just(RequestCodeResponse.ok("jklj3kl4hj12l5hlhjh14kj5h21kl3j4l12h351j24h1kl45b1kjh32lk5h12;465l2k53"));
-            }
+        return body
+                .map(it -> {
+                    if (it.isValid()) {
+                        return it.phone;
+                    }
 
-            return Mono.just(RequestCodeResponse.ERROR);
-        });
+                    throw Request.InvalidError.instance();
+                })
+                .zipWith(Mono.fromSupplier(tokenGenerator::nextToken))
+                .flatMap(it -> {
+                    final var phone = it.getT1();
+                    final var token = it.getT2();
+
+                    return tg.requestCode(phone, token);
+                })
+                .flatMap(it -> db.attemptAuth(it.getPhone(), it.getToken()))
+                .map(it -> RequestCodeResponse.ok(it.getToken()))
+                .onErrorReturn(RequestCodeResponse.ERROR);
     }
 
     @PostMapping(path = "/signIn", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)

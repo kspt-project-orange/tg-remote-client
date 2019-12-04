@@ -1,4 +1,4 @@
-package kspt.orange.tg_remote_client.api;
+package kspt.orange.tg_remote_client.api.rest;
 
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;

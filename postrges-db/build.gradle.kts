@@ -4,8 +4,8 @@ plugins {
 
 dependencies {
     implementation("org.jetbrains:annotations:17.0.0")
-    implementation("io.r2dbc:r2dbc-postgresql:0.8.0.RC2")
-    implementation("io.r2dbc:r2dbc-pool:0.8.0.RC2")
+    implementation("io.r2dbc:r2dbc-postgresql:0.8.0.RELEASE")
+    implementation("io.r2dbc:r2dbc-pool:0.8.0.RELEASE")
 
     implementation("com.typesafe:config:1.4.0")
 

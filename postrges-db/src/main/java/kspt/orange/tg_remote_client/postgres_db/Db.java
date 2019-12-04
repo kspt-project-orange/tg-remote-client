@@ -1,12 +1,14 @@
 package kspt.orange.tg_remote_client.postgres_db;
 
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import org.jetbrains.annotations.NotNull;
+import reactor.core.publisher.Mono;
+
+import java.util.function.Function;
 
 import static io.r2dbc.spi.ConnectionFactoryOptions.DATABASE;
 import static io.r2dbc.spi.ConnectionFactoryOptions.DRIVER;
@@ -52,13 +54,11 @@ public final class Db {
         pool.dispose();
     }
 
-    public void f() {
-    }
-
-    public static void main(String[] args) {
-        final var config = ConfigFactory.load("tg-remote-client.conf");
-        final var dbConfig = config.getConfig("tgRemoteClient.db");
-
-        new Db(dbConfig);
+    public Mono<AuthAttemptResult> attemptAuth(@NotNull final String phone, @NotNull final String token) {
+//        pool.create().flatMap(connection ->  connection
+//                .createStatement()
+//                .bind()
+//                .execute()).;
+        return Mono.just(new AuthAttemptResult(true, phone, token));
     }
 }
