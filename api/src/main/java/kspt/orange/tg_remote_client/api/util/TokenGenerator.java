@@ -13,7 +13,9 @@ public final class TokenGenerator {
     @NotNull
     private static final String DIGITS = "0123456789";
     @NotNull
-    private static final String SPECIAL_SYMBOLS = "!@#$%^&*-_+=,.:;\"'(){}[]<>~`\\/|";
+    private static final String FEW_SPECIAL_SYMBOLS = "$#-_%^&*+=";
+    @NotNull
+    private static final String SPECIAL_SYMBOLS = FEW_SPECIAL_SYMBOLS + "!@,.:;\"'(){}[]<>~`\\/|";
     private final int length;
     @NotNull
     private final Random random = new SecureRandom();
@@ -21,7 +23,7 @@ public final class TokenGenerator {
     private final char[] symbols;
 
     public TokenGenerator(final int vocabulary, final int length) {
-        if (length < 1 || (vocabulary & (Mode.LETTERS | Mode.DIGITS | Mode.SPECIAL_SYMBOLS)) == 0) {
+        if (length < 1 || (vocabulary & (Mode.LETTERS | Mode.DIGITS | Mode.FEW_SPECIAL_SYMBOLS | Mode.SPECIAL_SYMBOLS)) == 0) {
             throw new IllegalArgumentException();
         }
 
@@ -36,6 +38,8 @@ public final class TokenGenerator {
         }
         if ((vocabulary & Mode.SPECIAL_SYMBOLS) != 0) {
             symbols += SPECIAL_SYMBOLS;
+        } else if ((vocabulary & Mode.FEW_SPECIAL_SYMBOLS) != 0) {
+            symbols += FEW_SPECIAL_SYMBOLS;
         }
 
         this.symbols = symbols.toCharArray();
@@ -52,9 +56,10 @@ public final class TokenGenerator {
     }
 
     public static final class Mode {
-        public static final byte LETTERS         = 0b001;
-        public static final byte DIGITS          = 0b010;
-        public static final byte SPECIAL_SYMBOLS = 0b100;
-        public static final byte ALL_SYMBOLS     = LETTERS | DIGITS | SPECIAL_SYMBOLS;
+        public static final byte LETTERS             = 0b0001;
+        public static final byte DIGITS              = 0b0010;
+        public static final byte FEW_SPECIAL_SYMBOLS = 0b0100;
+        public static final byte SPECIAL_SYMBOLS     = 0b1000;
+        public static final byte ALL_SYMBOLS         = LETTERS | DIGITS | SPECIAL_SYMBOLS;
     }
 }

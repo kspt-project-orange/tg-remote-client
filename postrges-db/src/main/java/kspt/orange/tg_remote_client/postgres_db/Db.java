@@ -8,8 +8,8 @@ import io.r2dbc.spi.ConnectionFactoryOptions;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 
-import java.util.function.Function;
-
+import static io.r2dbc.pool.PoolingConnectionFactoryProvider.INITIAL_SIZE;
+import static io.r2dbc.pool.PoolingConnectionFactoryProvider.MAX_SIZE;
 import static io.r2dbc.spi.ConnectionFactoryOptions.DATABASE;
 import static io.r2dbc.spi.ConnectionFactoryOptions.DRIVER;
 import static io.r2dbc.spi.ConnectionFactoryOptions.HOST;
@@ -19,6 +19,8 @@ import static io.r2dbc.spi.ConnectionFactoryOptions.PROTOCOL;
 import static io.r2dbc.spi.ConnectionFactoryOptions.USER;
 
 public final class Db {
+    @NotNull
+    private static final Mono<Boolean> MONO_TRUE = Mono.just(Boolean.TRUE);
     @NotNull
     private final ConnectionPool pool;
 
@@ -31,6 +33,7 @@ public final class Db {
 
         final var poolMaxIdleTime = config.getDuration("pool.maxIdleTimeMillis");
         final var poolMaxSize = config.getInt("pool.maxSize");
+        final var poolMinSize = config.getInt("pool.minSize");
 
         final var connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
                 .option(DRIVER, "pool")
@@ -40,6 +43,8 @@ public final class Db {
                 .option(USER, user)
                 .option(PASSWORD, pass)
                 .option(DATABASE, database)
+                .option(INITIAL_SIZE, poolMinSize)
+                .option(MAX_SIZE, poolMaxSize)
                 .build());
 
         final var poolConfiguration = ConnectionPoolConfiguration.builder(connectionFactory)
@@ -54,11 +59,37 @@ public final class Db {
         pool.dispose();
     }
 
-    public Mono<AuthAttemptResult> attemptAuth(@NotNull final String phone, @NotNull final String token) {
-//        pool.create().flatMap(connection ->  connection
-//                .createStatement()
-//                .bind()
-//                .execute()).;
-        return Mono.just(new AuthAttemptResult(true, phone, token));
+    public Mono<Boolean> addAuthAttempt(@NotNull final String phone, @NotNull final String token) {
+//        return pool.create()
+//                .flatMap(connection -> {
+//                    final var uid = Mono.from(connection
+//                            .createStatement("INSERT INTO \"user\" (gender, age, first_language) VALUES ($1, $2, $3)")
+//                            .bind("$1", gender)
+//                            .bind("$2", age)
+//                            .bind("$3", firstLanguage)
+//                            .returnGeneratedValues("id")
+//                            .execute())
+//                            .flatMap(result -> Mono.from(result.map((row, __) -> row.get("id", Long.class))));
+//
+//                    return Mono.from(connection.close()).then(uid);
+//                });
+        return MONO_TRUE;
+    }
+
+    public Mono<Boolean> checkAuthAttemptToken(@NotNull final String phone, @NotNull final String token) {
+//        return pool.create()
+//                .flatMap(connection -> {
+//                    final var uid = Mono.from(connection
+//                            .createStatement("INSERT INTO \"user\" (gender, age, first_language) VALUES ($1, $2, $3)")
+//                            .bind("$1", gender)
+//                            .bind("$2", age)
+//                            .bind("$3", firstLanguage)
+//                            .returnGeneratedValues("id")
+//                            .execute())
+//                            .flatMap(result -> Mono.from(result.map((row, __) -> row.get("id", Long.class))));
+//
+//                    return Mono.from(connection.close()).then(uid);
+//                });
+        return MONO_TRUE;
     }
 }

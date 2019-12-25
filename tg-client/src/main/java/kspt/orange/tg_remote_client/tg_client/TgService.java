@@ -10,15 +10,46 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public final class TgService {
     @NotNull
+    private static final Mono<Boolean> MONO_TRUE = Mono.just(Boolean.TRUE);
+    @NotNull
     private final Config config;
 
     @NotNull
     private final ConcurrentHashMap<String, TgClient> clients = new ConcurrentHashMap<>();
 
-    public Mono<RequestCodeResult> requestCode(@NotNull final String phone, @NotNull final String token) {
-        //TODO: pass token to client, use it as a part of db directory
-        final var client = clients.computeIfAbsent(token, key -> new TgClient(config, key));
+    static {
+        //Application must be launched with -Djava.library.path=tg-client/libs
+        System.loadLibrary("tdjni");
+    }
 
-        return client.requestCode(phone);
+    @NotNull
+    public Mono<Boolean> requestCode(@NotNull final String phone, @NotNull final String token) {
+        final var client = getClient(token);
+
+        return client.requestCode(phone)
+                .flatMap(this::trueOrEmpty);
+    }
+
+    @NotNull
+    public Mono<Boolean> signIn(@NotNull final String phone, @NotNull final String token, @NotNull final String code) {
+        final var client = getClient(token);
+
+        return client.signIn(code)
+                .flatMap(this::trueOrEmpty);
+    }
+
+    @NotNull
+    private Mono<Boolean> trueOrEmpty(@NotNull final Boolean isTrue) {
+        return isTrue ? MONO_TRUE : Mono.empty();
+    }
+
+    @NotNull
+    private TgClient getClient(@NotNull final String token) {
+        return clients.computeIfAbsent(token, this::newClient);
+    }
+
+    @NotNull
+    private TgClient newClient(@NotNull final String directory) {
+        return new TgClient(config, directory);
     }
 }

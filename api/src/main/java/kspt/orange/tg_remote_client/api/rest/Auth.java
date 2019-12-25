@@ -1,6 +1,7 @@
 package kspt.orange.tg_remote_client.api.rest;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import kspt.orange.tg_remote_client.api.util.Parser;
 import kspt.orange.tg_remote_client.api.util.TokenGenerator;
 import kspt.orange.tg_remote_client.postgres_db.Db;
 import kspt.orange.tg_remote_client.tg_client.TgService;
@@ -8,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,61 +26,55 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping("/v0/auth")
 public final class Auth implements Api {
-    @Autowired
     @NotNull
     private final Db db;
-    @Autowired
     @NotNull
     private final TgService tg;
-    @Autowired
+    @NotNull
+    private final Parser parser;
     @NotNull
     private final TokenGenerator tokenGenerator;
 
     @PostMapping(path = "/requestCode", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
-    public Mono<? extends Response> requestCode(@RequestBody @NotNull final Mono<RequestCodeRequest> body) {
+    public Mono<RequestCodeResponse> requestCode(@RequestBody @NotNull final Mono<RequestCodeRequest> body) {
         return body
-                .map(it -> {
-                    if (it.isValid()) {
-                        return it.phone;
-                    }
+                .flatMap(parser::validOrEmpty)
+                .flatMap(requestBody -> {
+                    final var phone = requestBody.phone;
+                    final var token = tokenGenerator.nextToken();
 
-                    throw Request.InvalidError.instance();
+                    return tg.requestCode(phone, token)
+                            .flatMap(__ -> db.addAuthAttempt(phone, token))
+                            .map(__ -> RequestCodeResponse.ok(token));
                 })
-                .zipWith(Mono.fromSupplier(tokenGenerator::nextToken))
-                .flatMap(it -> {
-                    final var phone = it.getT1();
-                    final var token = it.getT2();
-
-                    return tg.requestCode(phone, token);
-                })
-                .flatMap(it -> db.attemptAuth(it.getPhone(), it.getToken()))
-                .map(it -> RequestCodeResponse.ok(it.getToken()))
-                .onErrorReturn(RequestCodeResponse.ERROR);
+                .defaultIfEmpty(RequestCodeResponse.ERROR);
     }
 
     @PostMapping(path = "/signIn", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
     public Mono<? extends Response> signIn(@RequestBody @NotNull final Mono<SignInRequest> body) {
-        return body.flatMap(request -> {
-            if (request.isValid()) {
-                return Mono.just(SignInResponse.ok("jkj13k2j4klhjlj1243lj5hkj1h3jkhl;hklj1lk3l51jlk"));
-            }
+        return body
+                .flatMap(parser::validOrEmpty)
+                .flatMap(requestBody -> {
+                    final var phone = requestBody.phone;
+                    final var token = requestBody.token;
+                    final var code = requestBody.code;
 
-            return Mono.just(SignInResponse.ERROR);
-        });
+                    return db.checkAuthAttemptToken(phone, token)
+                            .flatMap(__ -> tg.signIn(phone, token, code))
+                            .map(__ -> SignInResponse.OK);
+                })
+                .defaultIfEmpty(SignInResponse.ERROR);
     }
 
     @PostMapping(path = "/pass2FA", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
     public Mono<? extends Response> pass2Fa(@RequestBody @NotNull final Mono<Pass2FaRequest> body) {
-        return body.flatMap(request -> {
-            if (request.isValid()) {
-                return Mono.just(Pass2FaResponse.ok("jhkljh1j4h5jkh1jk24h5kj21h4kj5h12jk4h5klj12hk5j"));
-            }
-
-            return Mono.just(Pass2FaResponse.ERROR);
-        });
+        return body
+                .map(parser::validatedObject)
+                .map(it -> Pass2FaResponse.OK)
+                .onErrorReturn(Pass2FaResponse.ERROR);
     }
 
     @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
@@ -97,10 +91,10 @@ public final class Auth implements Api {
         @NotNull
         private final Status status;
         @Nullable
-        private final String authAttemptToken;
+        private final String token;
 
-        private static RequestCodeResponse ok(@NotNull final String authAttemptToken) {
-            return new RequestCodeResponse(Status.OK, authAttemptToken);
+        private static RequestCodeResponse ok(@NotNull final String token) {
+            return new RequestCodeResponse(Status.OK, token);
         }
 
         enum Status {
@@ -112,7 +106,7 @@ public final class Auth implements Api {
     @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
     private static final class SignInRequest implements Request {
         @Nullable
-        private final String authAttemptToken;
+        private final String token;
         @Nullable
         private final String phone;
         @Nullable
@@ -122,18 +116,14 @@ public final class Auth implements Api {
     @RequiredArgsConstructor
     private static final class SignInResponse implements Response {
         @NotNull
-        private static final SignInResponse ERROR_2FA_NEEDED = new SignInResponse(Status.ERROR_2FA_NEEDED, null);
+        private static final SignInResponse ERROR_2FA_NEEDED = new SignInResponse(Status.ERROR_2FA_NEEDED);
         @NotNull
-        private static final SignInResponse ERROR = new SignInResponse(Status.ERROR, null);
+        private static final SignInResponse ERROR = new SignInResponse(Status.ERROR);
+        @NotNull
+        private static final SignInResponse OK = new SignInResponse(Status.OK);
 
         @NotNull
         private final Status status;
-        @Nullable
-        private final String authPermanentToken;
-
-        private static SignInResponse ok(@NotNull final String authPermanentToken) {
-            return new SignInResponse(Status.OK, authPermanentToken);
-        }
 
         private enum Status {
             OK,
@@ -145,7 +135,7 @@ public final class Auth implements Api {
     @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
     private static final class Pass2FaRequest implements Request {
         @Nullable
-        private final String authAttemptToken;
+        private final String token;
         @Nullable
         private final String password;
     }
@@ -153,16 +143,12 @@ public final class Auth implements Api {
     @RequiredArgsConstructor
     private static final class Pass2FaResponse implements Response {
         @NotNull
-        private static final Pass2FaResponse ERROR = new Pass2FaResponse(Status.ERROR, null);
+        private static final Pass2FaResponse ERROR = new Pass2FaResponse(Status.ERROR);
+        @NotNull
+        private static final Pass2FaResponse OK = new Pass2FaResponse(Status.OK);
 
         @NotNull
         private final Status status;
-        @Nullable
-        private final String authPermanentToken;
-
-        private static Pass2FaResponse ok(@NotNull final String authPermanentToken) {
-            return new Pass2FaResponse(Status.OK, authPermanentToken);
-        }
 
         private enum Status {
             OK,
