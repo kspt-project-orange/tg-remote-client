@@ -76,7 +76,7 @@ public final class Db {
         return MONO_TRUE;
     }
 
-    public Mono<Boolean> checkAuthAttemptToken(@NotNull final String phone, @NotNull final String token) {
+    public Mono<Boolean> checkAuthAttemptToken(@NotNull final String token) {
 //        return pool.create()
 //                .flatMap(connection -> {
 //                    final var uid = Mono.from(connection
