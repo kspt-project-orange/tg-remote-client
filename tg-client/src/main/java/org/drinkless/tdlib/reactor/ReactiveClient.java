@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 
+import java.io.IOError;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.concurrent.CountDownLatch;
 
@@ -129,6 +131,13 @@ public final class ReactiveClient {
         params.applicationVersion = config.getString("appVersion");
         params.enableStorageOptimizer = true;
         params.useTestDc = config.getBoolean("useTestDc");
+
+        if (config.getBoolean("disableLogging")) {
+            Client.execute(new TdApi.SetLogVerbosityLevel(0));
+            if (Client.execute(new TdApi.SetLogStream(new TdApi.LogStreamFile("tdlib.log", 1 << 27))) instanceof TdApi.Error) {
+                throw new IOError(new IOException("Write access to the current directory is required"));
+            }
+        }
 
         return params;
     }

@@ -1,13 +1,13 @@
 package kspt.orange.tg_remote_client.api.rest;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import kspt.orange.tg_remote_client.api.util.Parser;
+import kspt.orange.tg_remote_client.api.util.RequestValidator;
 import kspt.orange.tg_remote_client.api.util.TokenGenerator;
 import kspt.orange.tg_remote_client.postgres_db.Db;
+import kspt.orange.tg_remote_client.tg_client.TgService;
 import kspt.orange.tg_remote_client.tg_client.result.Pass2FaResult;
 import kspt.orange.tg_remote_client.tg_client.result.RequestCodeResult;
 import kspt.orange.tg_remote_client.tg_client.result.SignInResult;
-import kspt.orange.tg_remote_client.tg_client.TgService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +22,6 @@ import reactor.core.publisher.Mono;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-//TODO
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
 @Slf4j
@@ -32,9 +31,9 @@ public final class Auth implements Api {
     @NotNull
     private final Db db;
     @NotNull
-    private final TgService tg;
+    private final TgService telegram;
     @NotNull
-    private final Parser parser;
+    private final RequestValidator requestValidator;
     @NotNull
     private final TokenGenerator tokenGenerator;
 
@@ -42,54 +41,67 @@ public final class Auth implements Api {
     @ResponseStatus(ACCEPTED)
     public Mono<RequestCodeResponse> requestCode(@RequestBody @NotNull final Mono<RequestCodeRequest> body) {
         return body
-                .flatMap(parser::validOrEmpty)
+                .flatMap(requestValidator::validOrEmpty)
                 .flatMap(requestBody -> {
-                    final var phone = requestBody.phone;
-                    final var token = tokenGenerator.nextToken();
+                    final var token = requestBody.token != null
+                            ? requestBody.token
+                            : tokenGenerator.nextToken();
 
-                    return tg.requestCode(phone, token)
-                            .flatMap(status -> db.addAuthAttempt(phone, token)
-                            .map(__ -> RequestCodeResponse.of(status, token)));
+                    return telegram.requestCode(requestBody.phone, token)
+                            .map(result -> RequestCodeResponse.of(result, token));
                 })
-                .defaultIfEmpty(RequestCodeResponse.ERROR);
+                .defaultIfEmpty(RequestCodeResponse.ERROR)
+                .onErrorReturn(Auth::logging, RequestCodeResponse.ERROR);
     }
 
     @PostMapping(path = "/signIn", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
     public Mono<SignInResponse> signIn(@RequestBody @NotNull final Mono<SignInRequest> body) {
         return body
-                .flatMap(parser::validOrEmpty)
-                .flatMap(requestBody -> {
-                    final var token = requestBody.token;
-                    final var code = requestBody.code;
+                .flatMap(requestValidator::validOrEmpty)
+                .flatMap(requestBody -> telegram.signIn(requestBody.token, requestBody.code)
+                        .flatMap(result -> {
+                            if (result == SignInResult.OK) {
+                                return db.addSession(requestBody.token)
+                                        .thenReturn(SignInResponse.OK);
+                            }
 
-                    return db.checkAuthAttemptToken(token)
-                            .flatMap(__ -> tg.signIn(token, code))
-                            .map(SignInResponse::of);
-                })
-                .defaultIfEmpty(SignInResponse.ERROR);
+                            return Mono.just(SignInResponse.of(result));
+                        }))
+                .defaultIfEmpty(SignInResponse.ERROR)
+                .onErrorReturn(Auth::logging, SignInResponse.ERROR);
     }
 
     @PostMapping(path = "/pass2FA", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
     public Mono<Pass2FaResponse> pass2Fa(@RequestBody @NotNull final Mono<Pass2FaRequest> body) {
         return body
-                .flatMap(parser::validOrEmpty)
-                .flatMap(requestBody -> {
-                    final var token = requestBody.token;
-                    final var password = requestBody.password;
+                .flatMap(requestValidator::validOrEmpty)
+                .flatMap(requestBody -> telegram.pass2Fa(requestBody.token, requestBody.password)
+                        .flatMap(result -> {
+                            if (result == Pass2FaResult.OK) {
+                                return db.addSession(requestBody.token)
+                                        .thenReturn(Pass2FaResponse.OK);
+                            }
 
-                    return db.checkAuthAttemptToken(token)
-                            .flatMap(__ -> tg.pass2Fa(token, password))
-                            .map(Pass2FaResponse::of);
-                })
-                .defaultIfEmpty(Pass2FaResponse.ERROR);
+                            return Mono.just(Pass2FaResponse.of(result));
+                        }))
+                .defaultIfEmpty(Pass2FaResponse.ERROR)
+                .onErrorReturn(Auth::logging, Pass2FaResponse.ERROR);
+    }
+
+    private static <T extends Throwable> boolean logging(@NotNull final T throwable) {
+        log.info("Error occurred", throwable);
+        return true;
     }
 
     @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
     private static final class RequestCodeRequest implements Request {
-        @Nullable
+        @NotNull
         final String phone;
+        @Nullable
+        @RequestValidator.OptionalField
+        final String token;
     }
 
     @RequiredArgsConstructor
@@ -115,16 +127,16 @@ public final class Auth implements Api {
 
     @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
     private static final class SignInRequest implements Request {
-        @Nullable
+        @NotNull
         final String token;
-        @Nullable
+        @NotNull
         final String code;
     }
 
     @RequiredArgsConstructor
     private static final class SignInResponse implements Response {
         @NotNull
-        static final SignInResponse ERROR_2FA_NEEDED = new SignInResponse(SignInResult.TFA_REQUIRED);
+        static final SignInResponse TFA_REQUIRED = new SignInResponse(SignInResult.TFA_REQUIRED);
         @NotNull
         static final SignInResponse ERROR = new SignInResponse(SignInResult.ERROR);
         @NotNull
@@ -139,7 +151,7 @@ public final class Auth implements Api {
                 case OK:
                     return OK;
                 case TFA_REQUIRED:
-                    return ERROR_2FA_NEEDED;
+                    return TFA_REQUIRED;
                 case ERROR:
                 default:
                     return ERROR;
@@ -149,9 +161,9 @@ public final class Auth implements Api {
 
     @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
     private static final class Pass2FaRequest implements Request {
-        @Nullable
+        @NotNull
         final String token;
-        @Nullable
+        @NotNull
         final String password;
     }
 

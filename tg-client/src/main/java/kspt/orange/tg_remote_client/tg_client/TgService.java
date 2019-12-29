@@ -25,22 +25,21 @@ public final class TgService {
 
     @NotNull
     public Mono<RequestCodeResult> requestCode(@NotNull final String phone, @NotNull final String token) {
-        return client(token).requestCode(phone);
+        return clients.computeIfAbsent(token, this::newClient).requestCode(phone);
     }
 
     @NotNull
     public Mono<SignInResult> signIn(@NotNull final String token, @NotNull final String code) {
-        return client(token).signIn(code);
+        final var client = clients.get(token);
+
+        return client != null ? client.signIn(code) : Mono.empty();
     }
 
     @NotNull
     public Mono<Pass2FaResult> pass2Fa(@NotNull final String token, @NotNull final String password) {
-        return client(token).pass2Fa(password);
-    }
+        final var client = clients.get(token);
 
-    @NotNull
-    private TgClient client(@NotNull final String token) {
-        return clients.computeIfAbsent(token, this::newClient);
+        return client != null ? client.pass2Fa(password) : Mono.empty();
     }
 
     @NotNull

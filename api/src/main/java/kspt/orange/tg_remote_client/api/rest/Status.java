@@ -18,7 +18,7 @@ public final class Status implements Api {
 
     @GetMapping(path = "/status", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
-    public Mono<? extends Response> status() {
+    public Mono<? extends StatusResponse> status() {
         return STATUS_ONLINE_RESPONSE;
     }
 

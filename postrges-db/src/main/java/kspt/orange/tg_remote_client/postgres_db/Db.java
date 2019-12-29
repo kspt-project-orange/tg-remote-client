@@ -20,7 +20,7 @@ import static io.r2dbc.spi.ConnectionFactoryOptions.USER;
 
 public final class Db {
     @NotNull
-    private static final Mono<Boolean> MONO_TRUE = Mono.just(Boolean.TRUE);
+    private static final Mono<?> MONO_NOT_EMPTY = Mono.just(new Object());
     @NotNull
     private final ConnectionPool pool;
 
@@ -55,41 +55,26 @@ public final class Db {
         pool = new ConnectionPool(poolConfiguration);
     }
 
-    public void close() {
-        pool.dispose();
+    @NotNull
+    public Mono<Void> close() {
+        return Mono.fromRunnable(pool::dispose);
     }
 
-    public Mono<Boolean> addAuthAttempt(@NotNull final String phone, @NotNull final String token) {
-//        return pool.create()
-//                .flatMap(connection -> {
-//                    final var uid = Mono.from(connection
-//                            .createStatement("INSERT INTO \"user\" (gender, age, first_language) VALUES ($1, $2, $3)")
-//                            .bind("$1", gender)
-//                            .bind("$2", age)
-//                            .bind("$3", firstLanguage)
-//                            .returnGeneratedValues("id")
-//                            .execute())
-//                            .flatMap(result -> Mono.from(result.map((row, __) -> row.get("id", Long.class))));
-//
-//                    return Mono.from(connection.close()).then(uid);
-//                });
-        return MONO_TRUE;
-    }
+    @NotNull
+    public Mono<?> addSession(@NotNull final String token) {
+        return pool.create()
+                .flatMap(connection -> {
+                    final var tokenAdded = Mono.from(connection
+                            .createStatement("INSERT INTO session (token) VALUES ($1)")
+                            .bind("$1", token)
+                            .execute())
+                            .flatMap(result -> Mono.from(result
+                                    .getRowsUpdated())
+                                    .flatMap(updatedRowCount -> updatedRowCount != 1
+                                            ? MONO_NOT_EMPTY
+                                            : Mono.empty()));
 
-    public Mono<Boolean> checkAuthAttemptToken(@NotNull final String token) {
-//        return pool.create()
-//                .flatMap(connection -> {
-//                    final var uid = Mono.from(connection
-//                            .createStatement("INSERT INTO \"user\" (gender, age, first_language) VALUES ($1, $2, $3)")
-//                            .bind("$1", gender)
-//                            .bind("$2", age)
-//                            .bind("$3", firstLanguage)
-//                            .returnGeneratedValues("id")
-//                            .execute())
-//                            .flatMap(result -> Mono.from(result.map((row, __) -> row.get("id", Long.class))));
-//
-//                    return Mono.from(connection.close()).then(uid);
-//                });
-        return MONO_TRUE;
+                    return Mono.from(connection.close()).then(tokenAdded);
+                });
     }
 }

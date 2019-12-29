@@ -4,11 +4,11 @@ CREATE TABLE IF NOT EXISTS "user"
     phone VARCHAR(15) NOT NULL -- ITU E.164: up to 15 digits
 );
 
-CREATE TABLE IF NOT EXISTS user_session
+CREATE TABLE IF NOT EXISTS session
 (
     id      BIGSERIAL PRIMARY KEY,
-    user_id BIGINT  NOT NULL,
-    token   VARCHAR NOT NULL,
+    user_id BIGINT,
+    token   CHAR(128) NOT NULL UNIQUE,
 
     FOREIGN KEY (user_id) REFERENCES "user" (id)
 );

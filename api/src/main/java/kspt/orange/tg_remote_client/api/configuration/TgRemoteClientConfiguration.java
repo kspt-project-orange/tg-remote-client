@@ -3,7 +3,7 @@ package kspt.orange.tg_remote_client.api.configuration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import kspt.orange.tg_remote_client.api.util.Parser;
+import kspt.orange.tg_remote_client.api.util.RequestValidator;
 import kspt.orange.tg_remote_client.api.util.TokenGenerator;
 import kspt.orange.tg_remote_client.postgres_db.Db;
 import kspt.orange.tg_remote_client.tg_client.TgService;
@@ -42,8 +42,8 @@ public class TgRemoteClientConfiguration {
 
     @Bean
     @NotNull
-    public Parser parser(@NotNull final ObjectMapper objectMapper) {
-        return new Parser(objectMapper);
+    public RequestValidator requestValidator() {
+        return new RequestValidator();
     }
 
     @NotNull
