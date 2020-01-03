@@ -4,6 +4,7 @@ import com.typesafe.config.Config;
 import kspt.orange.tg_remote_client.tg_client.result.Pass2FaResult;
 import kspt.orange.tg_remote_client.tg_client.result.RequestCodeResult;
 import kspt.orange.tg_remote_client.tg_client.result.SignInResult;
+import lombok.extern.slf4j.Slf4j;
 import org.drinkless.tdlib.TdApi;
 import org.drinkless.tdlib.reactor.ReactiveClient;
 import org.jetbrains.annotations.NotNull;
@@ -13,7 +14,7 @@ import static org.drinkless.tdlib.reactor.ReactiveClient.AuthState.READY;
 import static org.drinkless.tdlib.reactor.ReactiveClient.AuthState.WAITING_FOR_CODE;
 import static org.drinkless.tdlib.reactor.ReactiveClient.AuthState.WAITING_FOR_PASSWORD;
 
-//@Slf4j
+@Slf4j
 final class TgClient {
     @NotNull
     private ReactiveClient client;

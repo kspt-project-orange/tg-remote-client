@@ -149,7 +149,7 @@ public final class ReactiveClient {
 
     private static final class TdApiResultHolder {
         @Nullable
-        private TdApi.Object result;
+        TdApi.Object result;
     }
 
     public enum AuthState {

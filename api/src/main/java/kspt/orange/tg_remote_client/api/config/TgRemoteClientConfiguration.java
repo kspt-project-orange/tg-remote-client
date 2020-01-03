@@ -1,6 +1,5 @@
-package kspt.orange.tg_remote_client.api.configuration;
+package kspt.orange.tg_remote_client.api.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import kspt.orange.tg_remote_client.api.util.RequestValidator;
@@ -18,22 +17,22 @@ import static kspt.orange.tg_remote_client.api.util.TokenGenerator.Mode.LETTERS;
 @SuppressWarnings("unused")
 @Configuration
 public class TgRemoteClientConfiguration {
-    @NotNull
     @Bean
+    @NotNull
     public Config apiConfig() {
         return ConfigFactory.load("tg-remote-client.conf");
     }
 
-    @NotNull
     @Bean
+    @NotNull
     public Db db(@NotNull final Config apiConfig) {
         final var dbConfig = apiConfig.getConfig("tgRemoteClient.db");
 
         return new Db(dbConfig);
     }
 
-    @NotNull
     @Bean
+    @NotNull
     public TgService tg(@NotNull final Config apiConfig) {
         final var tgConfig = apiConfig.getConfig("tgRemoteClient.tg");
 
@@ -46,8 +45,8 @@ public class TgRemoteClientConfiguration {
         return new RequestValidator();
     }
 
-    @NotNull
     @Bean
+    @NotNull
     public TokenGenerator tokenGenerator() {
         return new TokenGenerator(LETTERS | DIGITS | FEW_SPECIAL_SYMBOLS, 128);
     }
