@@ -4,10 +4,12 @@ plugins {
 
 dependencies {
     implementation("org.jetbrains:annotations:17.0.0")
-    implementation("io.r2dbc:r2dbc-postgresql:0.8.0.RELEASE")
-    implementation("io.r2dbc:r2dbc-pool:0.8.0.RELEASE")
-
     implementation("com.typesafe:config:1.4.0")
+    implementation("io.projectreactor:reactor-core:3.3.1.RELEASE")
+
+    implementation("com.google.api-client:google-api-client:1.23.0")
+    implementation("com.google.oauth-client:google-oauth-client-jetty:1.23.0")
+    implementation("com.google.apis:google-api-services-drive:v3-rev110-1.23.0")
 
     implementation(project(":commons"))
 

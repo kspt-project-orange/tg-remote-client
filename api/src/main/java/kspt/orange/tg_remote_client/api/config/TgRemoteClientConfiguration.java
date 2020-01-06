@@ -4,6 +4,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import kspt.orange.tg_remote_client.api.util.RequestValidator;
 import kspt.orange.tg_remote_client.api.util.TokenGenerator;
+import kspt.orange.tg_remote_client.drive.DriveService;
 import kspt.orange.tg_remote_client.postgres_db.Db;
 import kspt.orange.tg_remote_client.tg_client.TgService;
 import org.jetbrains.annotations.NotNull;
@@ -33,10 +34,18 @@ public class TgRemoteClientConfiguration {
 
     @Bean
     @NotNull
-    public TgService tg(@NotNull final Config apiConfig) {
+    public TgService telegram(@NotNull final Config apiConfig) {
         final var tgConfig = apiConfig.getConfig("tgRemoteClient.tg");
 
         return new TgService(tgConfig);
+    }
+
+    @Bean
+    @NotNull
+    public DriveService drive(@NotNull final Config apiConfig) {
+        final var driveConfig = apiConfig.getConfig("tgRemoteClient.drive");
+
+        return new DriveService(driveConfig);
     }
 
     @Bean

@@ -19,17 +19,17 @@ final class TgClient {
     @NotNull
     private ReactiveClient client;
 
-    public TgClient(@NotNull final Config config, @NotNull final String directory) {
+    TgClient(@NotNull final Config config, @NotNull final String directory) {
         client = new ReactiveClient(config, directory);
     }
 
     @NotNull
-    public Mono<Void> close() {
+    Mono<Void> close() {
         return client.close();
     }
 
     @NotNull
-    public Mono<RequestCodeResult> requestCode(@NotNull final String phone) {
+    Mono<RequestCodeResult> requestCode(@NotNull final String phone) {
         return client.send(new TdApi.SetAuthenticationPhoneNumber(phone, null))
                 .map(result -> {
                     if (result.getConstructor() != TdApi.Ok.CONSTRUCTOR || client.authState() != WAITING_FOR_CODE) {
@@ -41,7 +41,7 @@ final class TgClient {
     }
 
     @NotNull
-    public Mono<SignInResult> signIn(@NotNull final String code) {
+    Mono<SignInResult> signIn(@NotNull final String code) {
         return client.send(new TdApi.CheckAuthenticationCode(code))
                 .map(result -> {
                     if (result.getConstructor() != TdApi.Ok.CONSTRUCTOR) {
@@ -61,7 +61,7 @@ final class TgClient {
     }
 
     @NotNull
-    public Mono<Pass2FaResult> pass2Fa(@NotNull final String password) {
+    Mono<Pass2FaResult> pass2Fa(@NotNull final String password) {
         return client.send(new TdApi.CheckAuthenticationPassword(password))
                 .map(result -> {
                     if (result.getConstructor() != TdApi.Ok.CONSTRUCTOR || client.authState() != READY) {

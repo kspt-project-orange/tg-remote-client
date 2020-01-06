@@ -3,6 +3,8 @@ package kspt.orange.tg_remote_client.api.rest;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import kspt.orange.tg_remote_client.api.util.RequestValidator;
 import kspt.orange.tg_remote_client.api.util.TokenGenerator;
+import kspt.orange.tg_remote_client.drive.DriveService;
+import kspt.orange.tg_remote_client.drive.result.AttachTokenResult;
 import kspt.orange.tg_remote_client.postgres_db.Db;
 import kspt.orange.tg_remote_client.tg_client.TgService;
 import kspt.orange.tg_remote_client.tg_client.result.Pass2FaResult;
@@ -33,12 +35,15 @@ public final class Auth implements Api {
     @NotNull
     private final TgService telegram;
     @NotNull
+    private final DriveService drive;
+    @NotNull
     private final RequestValidator requestValidator;
     @NotNull
     private final TokenGenerator tokenGenerator;
 
     @PostMapping(path = "/requestCode", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
+    @NotNull
     public Mono<RequestCodeResponse> requestCode(@RequestBody @NotNull final Mono<RequestCodeRequest> body) {
         return body
                 .flatMap(requestValidator::validOrEmpty)
@@ -56,6 +61,7 @@ public final class Auth implements Api {
 
     @PostMapping(path = "/signIn", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
+    @NotNull
     public Mono<SignInResponse> signIn(@RequestBody @NotNull final Mono<SignInRequest> body) {
         return body
                 .flatMap(requestValidator::validOrEmpty)
@@ -74,6 +80,7 @@ public final class Auth implements Api {
 
     @PostMapping(path = "/pass2FA", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
+    @NotNull
     public Mono<Pass2FaResponse> pass2Fa(@RequestBody @NotNull final Mono<Pass2FaRequest> body) {
         return body
                 .flatMap(requestValidator::validOrEmpty)
@@ -88,6 +95,18 @@ public final class Auth implements Api {
                         }))
                 .defaultIfEmpty(Pass2FaResponse.ERROR)
                 .onErrorReturn(Auth::logging, Pass2FaResponse.ERROR);
+    }
+
+    @PostMapping(path = "/attachDrive", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    @ResponseStatus(ACCEPTED)
+    @NotNull
+    public Mono<AttachDriveResponse> attachDrive(@RequestBody @NotNull final Mono<AttachDriveRequest> body) {
+        return body
+                .flatMap(requestValidator::validOrEmpty)
+                .flatMap(requestBody -> drive.attachToken(requestBody.driveToken))
+                .map(AttachDriveResponse::new)
+                .defaultIfEmpty(AttachDriveResponse.ERROR)
+                .onErrorReturn(Auth::logging, AttachDriveResponse.ERROR);
     }
 
     private static <T extends Throwable> boolean logging(@NotNull final T throwable) {
@@ -182,6 +201,40 @@ public final class Auth implements Api {
             switch (status) {
                 case OK:
                     return OK;
+                case ERROR:
+                default:
+                    return ERROR;
+            }
+        }
+    }
+
+    @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
+    private static final class AttachDriveRequest implements Request {
+        @NotNull
+        final String token;
+        @NotNull
+        final String driveToken;
+    }
+
+    @RequiredArgsConstructor
+    private static final class AttachDriveResponse implements Response {
+        @NotNull
+        static final AttachDriveResponse OK = new AttachDriveResponse(AttachTokenResult.OK);
+        @NotNull
+        static final AttachDriveResponse NOT_ENOUGH_RIGHTS = new AttachDriveResponse(AttachTokenResult.NOT_ENOUGH_RIGHTS);
+        @NotNull
+        static final AttachDriveResponse ERROR = new AttachDriveResponse(AttachTokenResult.ERROR);
+
+        @NotNull
+        final AttachTokenResult status;
+
+        @NotNull
+        static AttachDriveResponse of(@NotNull final AttachTokenResult status) {
+            switch (status) {
+                case OK:
+                    return OK;
+                case NOT_ENOUGH_RIGHTS:
+                    return NOT_ENOUGH_RIGHTS;
                 case ERROR:
                 default:
                     return ERROR;

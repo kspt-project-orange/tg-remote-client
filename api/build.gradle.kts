@@ -12,8 +12,10 @@ dependencies {
     implementation("org.jetbrains:annotations:17.0.0")
     implementation("com.typesafe:config:1.4.0")
 
+    implementation(project(":commons"))
     implementation(project(":tg-client"))
     implementation(project(":postrges-db"))
+    implementation(project(":drive"))
 
     compileOnly("org.projectlombok:lombok:1.18.10")
     annotationProcessor("org.projectlombok:lombok:1.18.10")
