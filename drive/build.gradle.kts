@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation("org.jetbrains:annotations:17.0.0")
     implementation("com.typesafe:config:1.4.0")
+    implementation("org.slf4j:slf4j-api:1.7.25")
     implementation("io.projectreactor:reactor-core:3.3.1.RELEASE")
 
     implementation("com.google.api-client:google-api-client:1.23.0")

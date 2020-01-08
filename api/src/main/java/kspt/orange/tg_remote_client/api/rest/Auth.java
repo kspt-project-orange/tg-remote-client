@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -100,10 +101,11 @@ public final class Auth implements Api {
     @PostMapping(path = "/attachDrive", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(ACCEPTED)
     @NotNull
-    public Mono<AttachDriveResponse> attachDrive(@RequestBody @NotNull final Mono<AttachDriveRequest> body) {
+    public Mono<AttachDriveResponse> attachDrive(@RequestHeader(name = "User-Agent") @NotNull final String userAgent,
+                                                 @RequestBody @NotNull final Mono<AttachDriveRequest> body) {
         return body
                 .flatMap(requestValidator::validOrEmpty)
-                .flatMap(requestBody -> drive.attachToken(requestBody.driveToken))
+                .flatMap(requestBody -> drive.attachToken(requestBody.token, requestBody.driveIdToken, requestBody.driveServerAuthCode))
                 .map(AttachDriveResponse::new)
                 .defaultIfEmpty(AttachDriveResponse.ERROR)
                 .onErrorReturn(Auth::logging, AttachDriveResponse.ERROR);
@@ -213,7 +215,9 @@ public final class Auth implements Api {
         @NotNull
         final String token;
         @NotNull
-        final String driveToken;
+        final String driveIdToken;
+        @NotNull
+        final String driveServerAuthCode;
     }
 
     @RequiredArgsConstructor

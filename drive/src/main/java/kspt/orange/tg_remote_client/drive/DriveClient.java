@@ -1,20 +1,24 @@
 package kspt.orange.tg_remote_client.drive;
 
-import com.typesafe.config.Config;
-import kspt.orange.tg_remote_client.drive.result.AttachTokenResult;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.JsonFactory;
+import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
-import reactor.core.publisher.Mono;
 
+@RequiredArgsConstructor
 final class DriveClient {
     @NotNull
-    private final String token;
-
-    DriveClient(@NotNull final Config config, @NotNull final String token) {
-        this.token = token;
-    }
-
+    private final HttpTransport httpTransport;
     @NotNull
-    static Mono<AttachTokenResult> attachToken(@NotNull final String token) {
-        return Mono.just(AttachTokenResult.OK);
-    }
+    private final JsonFactory jsonFactory;
+    @NotNull
+    private final GoogleClientSecrets clientSecrets;
+    @NotNull
+    private final GoogleIdToken idToken;
+    @NotNull
+    private final String accessToken;
+    @NotNull
+    private final String refreshToken;
 }
