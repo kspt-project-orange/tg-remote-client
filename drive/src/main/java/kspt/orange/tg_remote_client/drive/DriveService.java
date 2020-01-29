@@ -29,14 +29,11 @@ final public class DriveService {
     @NotNull
     private final JsonFactory googleJsonFactory = JacksonFactory.getDefaultInstance();
     @NotNull
-    private final Config config;
-    @NotNull
     private final GoogleClientSecrets googleClientSecrets;
     @NotNull
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
     public DriveService(@NotNull final Config config) {
-        this.config = config;
         this.googleClientSecrets = googleClientSecrets(googleJsonFactory, config);
         this.googleIdTokenVerifier = googleIdTokenVerifier(googleHttpTransport, googleJsonFactory, config);
     }
