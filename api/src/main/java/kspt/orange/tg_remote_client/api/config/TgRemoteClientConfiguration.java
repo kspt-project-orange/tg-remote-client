@@ -2,7 +2,6 @@ package kspt.orange.tg_remote_client.api.config;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import kspt.orange.tg_remote_client.api.rest.TgToDrive;
 import kspt.orange.tg_remote_client.api.util.RequestValidator;
 import kspt.orange.tg_remote_client.api.util.TokenGenerator;
 import kspt.orange.tg_remote_client.drive.DriveService;
@@ -12,8 +11,6 @@ import kspt.orange.tg_remote_client.tg_to_drive.TgToDriveService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.awt.image.DataBuffer;
 
 import static kspt.orange.tg_remote_client.api.util.TokenGenerator.Mode.DIGITS;
 import static kspt.orange.tg_remote_client.api.util.TokenGenerator.Mode.FEW_SPECIAL_SYMBOLS;

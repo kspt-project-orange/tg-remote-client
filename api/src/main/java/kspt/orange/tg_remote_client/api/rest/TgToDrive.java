@@ -5,6 +5,7 @@ import kspt.orange.tg_remote_client.api.util.RequestValidator;
 import kspt.orange.tg_remote_client.drive.DriveService;
 import kspt.orange.tg_remote_client.postgres_db.Db;
 import kspt.orange.tg_remote_client.tg_client.TgService;
+import kspt.orange.tg_remote_client.tg_to_drive.TgToDriveService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -27,9 +28,7 @@ public final class TgToDrive implements Api {
     @NotNull
     private final Db db;
     @NotNull
-    private final TgService telegram;
-    @NotNull
-    private final DriveService drive;
+    private final TgToDriveService telegramToDrive;
     @NotNull
     private final RequestValidator requestValidator;
 
