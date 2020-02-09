@@ -40,7 +40,7 @@ public final class TgToDrive implements Api {
                 .flatMap(requestValidator::validOrEmpty)
                 .map(__ -> StartProcessingResponse.OK)
                 .defaultIfEmpty(StartProcessingResponse.ERROR)
-                .onErrorReturn(StartProcessingResponse.ERROR));
+                .onErrorReturn(StartProcessingResponse.ERROR);
     }
 
     @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
