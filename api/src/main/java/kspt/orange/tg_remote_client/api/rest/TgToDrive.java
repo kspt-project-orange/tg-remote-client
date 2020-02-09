@@ -38,9 +38,9 @@ public final class TgToDrive implements Api {
     public Mono<StartProcessingResponse> startProcessing(@RequestBody @NotNull final Mono<StartProcessingRequest> body) {
         return body
                 .flatMap(requestValidator::validOrEmpty)
-                .map(__ -> new StartProcessingResponse(StartProcessingResponse.Status.OK))
-                .defaultIfEmpty(new StartProcessingResponse(StartProcessingResponse.Status.ERROR))
-                .onErrorReturn(new StartProcessingResponse(StartProcessingResponse.Status.ERROR));
+                .map(__ -> StartProcessingResponse.OK)
+                .defaultIfEmpty(StartProcessingResponse.ERROR)
+                .onErrorReturn(StartProcessingResponse.ERROR));
     }
 
     @RequiredArgsConstructor(onConstructor = @__(@JsonCreator))
@@ -51,6 +51,11 @@ public final class TgToDrive implements Api {
 
     @RequiredArgsConstructor
     private static final class StartProcessingResponse implements Response {
+        @NotNull
+        private static final StartProcessingResponse OK = new StartProcessingResponse(Status.OK);
+        @NotNull
+        private static final StartProcessingResponse ERROR = new StartProcessingResponse(Status.ERROR);
+
         @NotNull private final Status status;
 
         private enum Status {
