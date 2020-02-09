@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 final public class DriveService {
     @NotNull
+    private static final String REDIRECT_URI = "";
     private final ConcurrentHashMap<String, DriveClient> clients = new ConcurrentHashMap<>();
     @NotNull
     private final HttpTransport googleHttpTransport = googleHttpTransport();
@@ -57,7 +58,7 @@ final public class DriveService {
                                 googleClientSecrets.getDetails().getClientId(),
                                 googleClientSecrets.getDetails().getClientSecret(),
                                 serverAuthCode,
-                                "").execute();
+                                REDIRECT_URI).execute();
 
                         clients.put(token, new DriveClient(
                                 googleHttpTransport,

@@ -45,15 +45,17 @@ public final class ReactiveClient {
                         return TD_API_ERROR;
                     }
 
-                    final var holder = new TdApiResultHolder();
+                    final var res = new Object() {
+                        TdApi.Object value;
+                    };
                     final var latch = new CountDownLatch(1);
                     client.send(query, result -> {
-                        holder.result = result;
+                        res.value = result;
                         latch.countDown();
                     });
                     latch.await();
 
-                    return holder.result;
+                    return res.value;
                 })
                 .onErrorReturn(ReactiveClient::logging, TD_API_ERROR);
     }
@@ -145,11 +147,6 @@ public final class ReactiveClient {
     private static <T extends Throwable> boolean logging(@NotNull final T error) {
         log.info("Error occurred", error);
         return true;
-    }
-
-    private static final class TdApiResultHolder {
-        @Nullable
-        TdApi.Object result;
     }
 
     public enum AuthState {

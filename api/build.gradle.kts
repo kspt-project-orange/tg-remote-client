@@ -14,8 +14,9 @@ dependencies {
 
     implementation(project(":commons"))
     implementation(project(":tg-client"))
-    implementation(project(":postrges-db"))
+    implementation(project(":postgres-db"))
     implementation(project(":drive"))
+    implementation(project(":tg-to-drive"))
 
     compileOnly("org.projectlombok:lombok:1.18.10")
     annotationProcessor("org.projectlombok:lombok:1.18.10")

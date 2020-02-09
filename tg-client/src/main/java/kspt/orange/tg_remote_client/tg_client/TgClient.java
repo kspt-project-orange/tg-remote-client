@@ -17,7 +17,7 @@ import static org.drinkless.tdlib.reactor.ReactiveClient.AuthState.WAITING_FOR_P
 @Slf4j
 final class TgClient {
     @NotNull
-    private ReactiveClient client;
+    private final ReactiveClient client;
 
     TgClient(@NotNull final Config config, @NotNull final String directory) {
         client = new ReactiveClient(config, directory);

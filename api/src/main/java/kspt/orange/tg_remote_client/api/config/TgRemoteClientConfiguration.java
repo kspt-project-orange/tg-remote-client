@@ -2,14 +2,18 @@ package kspt.orange.tg_remote_client.api.config;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import kspt.orange.tg_remote_client.api.rest.TgToDrive;
 import kspt.orange.tg_remote_client.api.util.RequestValidator;
 import kspt.orange.tg_remote_client.api.util.TokenGenerator;
 import kspt.orange.tg_remote_client.drive.DriveService;
 import kspt.orange.tg_remote_client.postgres_db.Db;
 import kspt.orange.tg_remote_client.tg_client.TgService;
+import kspt.orange.tg_remote_client.tg_to_drive.TgToDriveService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.awt.image.DataBuffer;
 
 import static kspt.orange.tg_remote_client.api.util.TokenGenerator.Mode.DIGITS;
 import static kspt.orange.tg_remote_client.api.util.TokenGenerator.Mode.FEW_SPECIAL_SYMBOLS;
@@ -58,5 +62,13 @@ public class TgRemoteClientConfiguration {
     @NotNull
     public TokenGenerator tokenGenerator() {
         return new TokenGenerator(LETTERS | DIGITS | FEW_SPECIAL_SYMBOLS, 128);
+    }
+
+    @Bean
+    @NotNull
+    public TgToDriveService telegramToDrive(@NotNull final TgService telegram,
+                                            @NotNull final DriveService drive,
+                                            @NotNull final Db db) {
+        return new TgToDriveService(telegram, drive, db);
     }
 }

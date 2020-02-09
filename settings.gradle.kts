@@ -1,7 +1,10 @@
 rootProject.name = "tg-remote-client"
-include("api",
+include(
+        "api",
         "blob-storage",
-        "postrges-db",
-        "tg-client")
-include("drive")
-include("commons")
+        "postgres-db",
+        "tg-client",
+        "drive",
+        "commons",
+        "tg-to-drive"
+)
