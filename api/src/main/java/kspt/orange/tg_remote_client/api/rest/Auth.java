@@ -47,7 +47,7 @@ public final class Auth implements Api {
     @NotNull
     public Mono<RequestCodeResponse> requestCode(@RequestBody @NotNull final Mono<RequestCodeRequest> body) {
         return body
-                .flatMap(requestValidator::validOrEmpty)
+                .filter(requestValidator::isValid)
                 .flatMap(requestBody -> {
                     final var token = requestBody.token != null
                             ? requestBody.token
@@ -65,7 +65,7 @@ public final class Auth implements Api {
     @NotNull
     public Mono<SignInResponse> signIn(@RequestBody @NotNull final Mono<SignInRequest> body) {
         return body
-                .flatMap(requestValidator::validOrEmpty)
+                .filter(requestValidator::isValid)
                 .flatMap(requestBody -> telegram.signIn(requestBody.token, requestBody.code)
                         .flatMap(result -> {
                             if (result == SignInResult.OK) {
@@ -84,7 +84,7 @@ public final class Auth implements Api {
     @NotNull
     public Mono<Pass2FaResponse> pass2Fa(@RequestBody @NotNull final Mono<Pass2FaRequest> body) {
         return body
-                .flatMap(requestValidator::validOrEmpty)
+                .filter(requestValidator::isValid)
                 .flatMap(requestBody -> telegram.pass2Fa(requestBody.token, requestBody.password)
                         .flatMap(result -> {
                             if (result == Pass2FaResult.OK) {
@@ -104,9 +104,10 @@ public final class Auth implements Api {
     public Mono<AttachDriveResponse> attachDrive(@RequestHeader(name = "User-Agent") @NotNull final String userAgent,
                                                  @RequestBody @NotNull final Mono<AttachDriveRequest> body) {
         return body
-                .flatMap(requestValidator::validOrEmpty)
+                .filter(requestValidator::isValid)
+                .filterWhen(requestBody -> db.isValidToken(requestBody.token))
                 .flatMap(requestBody -> drive.attachToken(requestBody.token, requestBody.driveIdToken, requestBody.driveServerAuthCode))
-                .map(AttachDriveResponse::new)
+                .map(AttachDriveResponse::of)
                 .defaultIfEmpty(AttachDriveResponse.ERROR)
                 .onErrorReturn(Auth::logging, AttachDriveResponse.ERROR);
     }

@@ -19,12 +19,17 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
 final public class DriveService {
     @NotNull
     private static final String REDIRECT_URI = "";
-    private final ConcurrentHashMap<String, DriveClient> clients = new ConcurrentHashMap<>();
+    @NotNull
+    private static final String GOOGLE_APIS_OAUTH_2_TOKEN_URL = "https://oauth2.googleapis.com/token";
+
+    @NotNull
+    private final ConcurrentMap<String, DriveClient> clients = new ConcurrentHashMap<>();
     @NotNull
     private final HttpTransport googleHttpTransport = googleHttpTransport();
     @NotNull
@@ -50,13 +55,14 @@ final public class DriveService {
                         return AttachTokenResult.WRONG_ID_TOKEN;
                     }
 
+                    final var googleClientSecretsDetails = googleClientSecrets.getDetails();
                     try {
                         final var tokenResponse = new GoogleAuthorizationCodeTokenRequest(
                                 googleHttpTransport,
                                 googleJsonFactory,
-                                "https://oauth2.googleapis.com/token",
-                                googleClientSecrets.getDetails().getClientId(),
-                                googleClientSecrets.getDetails().getClientSecret(),
+                                GOOGLE_APIS_OAUTH_2_TOKEN_URL,
+                                googleClientSecretsDetails.getClientId(),
+                                googleClientSecretsDetails.getClientSecret(),
                                 serverAuthCode,
                                 REDIRECT_URI).execute();
 
@@ -81,7 +87,7 @@ final public class DriveService {
         try {
             return GoogleNetHttpTransport.newTrustedTransport();
         } catch (GeneralSecurityException | IOException e) {
-            log.info("Error during http transport instantiation", e);
+            log.error("Error during http transport instantiation", e);
             throw Exceptions.uncheckedFromChecked(e);
         }
     }
@@ -92,7 +98,7 @@ final public class DriveService {
         try {
             return GoogleClientSecrets.load(jsonFactory, new FileReader(DriveService.class.getClassLoader().getResource(config.getString("clientSecretFile")).getFile()));
         } catch (IOException e) {
-            log.info("Error during client secrets read", e);
+            log.error("Error during client secrets read", e);
             throw Exceptions.uncheckedFromChecked(e);
         }
     }

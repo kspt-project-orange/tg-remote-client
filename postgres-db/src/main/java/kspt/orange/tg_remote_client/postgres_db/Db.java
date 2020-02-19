@@ -5,6 +5,7 @@ import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactoryOptions;
+import kspt.orange.rg_remote_client.commons.reactor.Monos;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 
@@ -19,8 +20,6 @@ import static io.r2dbc.spi.ConnectionFactoryOptions.PROTOCOL;
 import static io.r2dbc.spi.ConnectionFactoryOptions.USER;
 
 public final class Db {
-    @NotNull
-    private static final Mono<?> MONO_NOT_EMPTY = Mono.just(new Object());
     @NotNull
     private final ConnectionPool pool;
 
@@ -61,6 +60,22 @@ public final class Db {
     }
 
     @NotNull
+    public Mono<Boolean> isValidToken(@NotNull final String token) {
+        return pool
+                .create()
+                .flatMap(connection -> {
+                    final var hasToken = Mono.from(connection
+                            .createStatement("SELECT id FROM session WHERE token = $1")
+                            .bind("$1", token)
+                            .execute())
+                            .flatMap(result -> Mono.from(result.map((__, $) -> Boolean.TRUE)))
+                            .defaultIfEmpty(Boolean.FALSE);
+
+                    return Mono.from(connection.close()).then(hasToken);
+                });
+    }
+
+    @NotNull
     public Mono<?> addSession(@NotNull final String token) {
         return pool.create()
                 .flatMap(connection -> {
@@ -70,8 +85,8 @@ public final class Db {
                             .execute())
                             .flatMap(result -> Mono.from(result
                                     .getRowsUpdated())
-                                    .flatMap(updatedRowCount -> updatedRowCount != 1
-                                            ? MONO_NOT_EMPTY
+                                    .flatMap(updatedRowCount -> !Integer.valueOf(1).equals(updatedRowCount)
+                                            ? Monos.NOT_EMPTY
                                             : Mono.empty()));
 
                     return Mono.from(connection.close()).then(tokenAdded);
