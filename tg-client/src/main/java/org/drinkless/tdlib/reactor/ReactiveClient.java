@@ -5,13 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.drinkless.tdlib.Client;
 import org.drinkless.tdlib.TdApi;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 
 import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 
 @Slf4j
 public final class ReactiveClient {
@@ -22,13 +23,16 @@ public final class ReactiveClient {
     @NotNull
     private final Client client;
     @NotNull
+    private final ExecutorService syncOperationExecutor;
+    @NotNull
     private volatile AuthState authState = AuthState.INITIAL;
     @NotNull
     private final CountDownLatch authStateLatch = new CountDownLatch(1);
 
-    public ReactiveClient(@NotNull final Config config, @NotNull final String directory) {
-        params = params(config, directory);
-        client = Client.create(this::handleTdLibEvent, null, null);
+    public ReactiveClient(@NotNull final Config config, @NotNull final String directory, @NotNull final ExecutorService syncOperationExecutor) {
+        this.params = params(config, directory);
+        this.client = Client.create(this::handleTdLibEvent, null, null);
+        this.syncOperationExecutor = syncOperationExecutor;
     }
 
     @NotNull
@@ -39,8 +43,13 @@ public final class ReactiveClient {
     @NotNull
     public Mono<TdApi.Object> send(@NotNull final TdApi.Function query) {
         return Mono
-                .fromCallable(() -> {
-                    authStateLatch.await();
+                .fromFuture(CompletableFuture.supplyAsync(() -> {
+                    try {
+                        authStateLatch.await();
+                    } catch (InterruptedException e) {
+                        log.error("authStateLatch.await()", e);
+                    }
+
                     if (authState == AuthState.INITIAL) {
                         return TD_API_ERROR;
                     }
@@ -53,10 +62,14 @@ public final class ReactiveClient {
                         res.value = result;
                         latch.countDown();
                     });
-                    latch.await();
+                    try {
+                        latch.await();
+                    } catch (InterruptedException e) {
+                        log.error("Client send result latch await()", e);
+                    }
 
                     return res.value;
-                })
+                }, syncOperationExecutor))
                 .onErrorReturn(ReactiveClient::logging, TD_API_ERROR);
     }
 

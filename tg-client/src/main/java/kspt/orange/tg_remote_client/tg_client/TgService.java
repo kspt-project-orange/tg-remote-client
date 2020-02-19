@@ -4,23 +4,32 @@ import com.typesafe.config.Config;
 import kspt.orange.tg_remote_client.tg_client.result.Pass2FaResult;
 import kspt.orange.tg_remote_client.tg_client.result.RequestCodeResult;
 import kspt.orange.tg_remote_client.tg_client.result.SignInResult;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-@RequiredArgsConstructor
 public final class TgService {
     @NotNull
     private final Config config;
+    @NotNull
+    private final ExecutorService syncOperationExecutor;
 
     @NotNull
     private final ConcurrentHashMap<String, TgClient> clients = new ConcurrentHashMap<>();
 
     static {
-        //Application must be launched with -Djava.library.path=tg-client/libs
+        /// Application must be launched with -Djava.library.path=tg-client/libs
         System.loadLibrary("tdjni");
+    }
+
+    public TgService(@NotNull final Config config) {
+        this.config = config;
+        this.syncOperationExecutor = scalableThreadPool(config.getConfig("syncPool"));
     }
 
     @NotNull
@@ -44,6 +53,21 @@ public final class TgService {
 
     @NotNull
     private TgClient newClient(@NotNull final String directory) {
-        return new TgClient(config, directory);
+        return new TgClient(config, directory, syncOperationExecutor);
+    }
+
+    @NotNull
+    private static ExecutorService scalableThreadPool(@NotNull final Config config) {
+        final var minThreadCount = config.getInt("minThreadCount");
+        final var maxThreadCount = config.getInt("maxThreadCount");
+        final var maxIdleMillis = config.getInt("maxIdleMillis");
+
+        return new ThreadPoolExecutor(
+                minThreadCount,
+                maxThreadCount,
+                maxIdleMillis,
+                TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(minThreadCount)
+        );
     }
 }
