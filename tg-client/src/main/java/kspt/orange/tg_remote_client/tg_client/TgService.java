@@ -66,7 +66,7 @@ public final class TgService {
                 minThreadCount,
                 maxThreadCount,
                 maxIdleMillis,
-                TimeUnit.SECONDS,
+                TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(minThreadCount)
         );
     }
