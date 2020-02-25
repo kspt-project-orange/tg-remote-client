@@ -10,8 +10,6 @@ import org.drinkless.tdlib.reactor.ReactiveClient;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 
-import java.util.concurrent.ExecutorService;
-
 import static org.drinkless.tdlib.reactor.ReactiveClient.AuthState.READY;
 import static org.drinkless.tdlib.reactor.ReactiveClient.AuthState.WAITING_FOR_CODE;
 import static org.drinkless.tdlib.reactor.ReactiveClient.AuthState.WAITING_FOR_PASSWORD;
@@ -21,8 +19,8 @@ final class TgClient {
     @NotNull
     private final ReactiveClient client;
 
-    TgClient(@NotNull final Config config, @NotNull final String directory, @NotNull final ExecutorService syncOperationExecutor) {
-        client = new ReactiveClient(config, directory, syncOperationExecutor);
+    TgClient(@NotNull final Config config, @NotNull final String directory) {
+        client = new ReactiveClient(config, directory);
     }
 
     @NotNull

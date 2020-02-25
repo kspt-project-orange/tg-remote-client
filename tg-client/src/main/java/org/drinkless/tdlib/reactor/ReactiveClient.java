@@ -10,9 +10,7 @@ import reactor.core.publisher.Mono;
 import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 
 @Slf4j
 public final class ReactiveClient {
@@ -23,16 +21,13 @@ public final class ReactiveClient {
     @NotNull
     private final Client client;
     @NotNull
-    private final ExecutorService syncOperationExecutor;
-    @NotNull
     private volatile AuthState authState = AuthState.INITIAL;
     @NotNull
     private final CountDownLatch authStateLatch = new CountDownLatch(1);
 
-    public ReactiveClient(@NotNull final Config config, @NotNull final String directory, @NotNull final ExecutorService syncOperationExecutor) {
+    public ReactiveClient(@NotNull final Config config, @NotNull final String directory) {
         this.params = params(config, directory);
         this.client = Client.create(this::handleTdLibEvent, null, null);
-        this.syncOperationExecutor = syncOperationExecutor;
     }
 
     @NotNull
@@ -42,35 +37,22 @@ public final class ReactiveClient {
 
     @NotNull
     public Mono<TdApi.Object> send(@NotNull final TdApi.Function query) {
-        return Mono
-                .fromFuture(CompletableFuture.supplyAsync(() -> {
-                    try {
-                        authStateLatch.await();
-                    } catch (InterruptedException e) {
-                        log.error("authStateLatch.await()", e);
-                    }
+        return Mono.create(sink -> {
+            try {
+                authStateLatch.await();
+            } catch (InterruptedException e) {
+                log.error("authStateLatch.await()", e);
+                sink.success(TD_API_ERROR);
+                return;
+            }
 
-                    if (authState == AuthState.INITIAL) {
-                        return TD_API_ERROR;
-                    }
+            if (authState == AuthState.INITIAL) {
+                sink.success(TD_API_ERROR);
+                return;
+            }
 
-                    final var res = new Object() {
-                        TdApi.Object value;
-                    };
-                    final var latch = new CountDownLatch(1);
-                    client.send(query, result -> {
-                        res.value = result;
-                        latch.countDown();
-                    });
-                    try {
-                        latch.await();
-                    } catch (InterruptedException e) {
-                        log.error("Client send result latch await()", e);
-                    }
-
-                    return res.value;
-                }, syncOperationExecutor))
-                .onErrorReturn(ReactiveClient::logging, TD_API_ERROR);
+            client.send(query, sink::success);
+        });
     }
 
     @NotNull
