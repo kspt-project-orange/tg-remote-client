@@ -3,16 +3,18 @@ package kspt.orange.tg_remote_client.drive;
 import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.typesafe.config.Config;
-import kspt.orange.rg_remote_client.commons.exceptions.Exceptions;
 import kspt.orange.tg_remote_client.drive.result.AttachTokenResult;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;
 
 import java.io.FileReader;
@@ -49,10 +51,11 @@ final public class DriveService {
                                                @NotNull final String idToken,
                                                @NotNull final String serverAuthCode) {
         return Mono
-                .fromCallable(() -> {
-                    final var idTokenObject = googleIdTokenVerifier.verify(idToken);
+                .create(sink -> {
+                    final var idTokenObject = verifyIdToken(idToken);
                     if (idTokenObject == null) {
-                        return AttachTokenResult.WRONG_ID_TOKEN;
+                        sink.success(AttachTokenResult.WRONG_ID_TOKEN);
+                        return;
                     }
 
                     final var googleClientSecretsDetails = googleClientSecrets.getDetails();
@@ -64,7 +67,8 @@ final public class DriveService {
                                 googleClientSecretsDetails.getClientId(),
                                 googleClientSecretsDetails.getClientSecret(),
                                 serverAuthCode,
-                                REDIRECT_URI).execute();
+                                REDIRECT_URI
+                        ).execute();
 
                         clients.put(token, new DriveClient(
                                 googleHttpTransport,
@@ -75,23 +79,34 @@ final public class DriveService {
                                 tokenResponse.getRefreshToken()
                         ));
 
-                        return AttachTokenResult.OK;
+                        sink.success(AttachTokenResult.OK);
                     } catch (TokenResponseException e) {
-                        return AttachTokenResult.WRONG_SERVER_AUTH_CODE;
+                        sink.success(AttachTokenResult.WRONG_SERVER_AUTH_CODE);
+                    } catch (IOException e) {
+                        log.error("Error during auth request to google", e);
+                        sink.success(AttachTokenResult.ERROR);
                     }
                 });
     }
 
+    @SneakyThrows
+    @Nullable
+    private GoogleIdToken verifyIdToken(@NotNull final String idToken) {
+        return googleIdTokenVerifier.verify(idToken);
+    }
+
+    @SneakyThrows
     @NotNull
     private static HttpTransport googleHttpTransport() {
         try {
             return GoogleNetHttpTransport.newTrustedTransport();
         } catch (GeneralSecurityException | IOException e) {
             log.error("Error during http transport instantiation", e);
-            throw Exceptions.uncheckedFromChecked(e);
+            throw e;
         }
     }
 
+    @SneakyThrows
     @NotNull
     private static GoogleClientSecrets googleClientSecrets(@NotNull final JsonFactory jsonFactory,
                                                            @NotNull final Config config) {
@@ -99,7 +114,7 @@ final public class DriveService {
             return GoogleClientSecrets.load(jsonFactory, new FileReader(DriveService.class.getClassLoader().getResource(config.getString("clientSecretFile")).getFile()));
         } catch (IOException e) {
             log.error("Error during client secrets read", e);
-            throw Exceptions.uncheckedFromChecked(e);
+            throw e;
         }
     }
 
